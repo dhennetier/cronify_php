@@ -18,8 +18,8 @@ pipeline {
         stage('Debug: Vérifier les fichiers') {
             steps {
                 script {
-                    sh 'pwd'  // Affiche le répertoire courant
-                    sh 'ls -la docker/'  // Vérifie le contenu de docker/
+                    sh 'pwd'
+                    sh 'ls -la docker/'
                 }
             }
         }
@@ -27,15 +27,15 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Utilise le chemin absolu pour éviter toute ambiguïté
-                    sh '''
-                        cd docker/ && \
-                        docker build -t ${DOCKER_IMAGE}:${env.BUILD_NUMBER} \
-                            --build-arg POSTGRES_DB=${POSTGRES_DB} \
-                            --build-arg POSTGRES_USER=${POSTGRES_USER} \
-                            --build-arg POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
-                            -f Dockerfile .
-                    '''
+                    dir('docker') {
+                        sh """
+                            docker build -t ${DOCKER_IMAGE}:${env.BUILD_NUMBER} \
+                                --build-arg POSTGRES_DB=${POSTGRES_DB} \
+                                --build-arg POSTGRES_USER=${POSTGRES_USER} \
+                                --build-arg POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
+                                -f Dockerfile .
+                        """
+                    }
                 }
             }
         }
