@@ -20,11 +20,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                        docker build -t ${DOCKER_IMAGE}:${env.BUILD_NUMBER} \
-                            --build-arg POSTGRES_DB=${POSTGRES_DB} \
-                            --build-arg POSTGRES_USER=${POSTGRES_USER} \
-                            --build-arg POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
-                            -f docker/Dockerfile .
+                        docker-compose build --no-cache app
                     """
                 }
             }
@@ -33,23 +29,29 @@ pipeline {
         stage('Test with Docker Compose') {
             steps {
                 script {
-                    // Lance les services
                     sh 'docker-compose up -d database'
                     sh 'sleep 10'
                     sh 'docker-compose up -d app'
-                    sh 'sleep 45'  // Temps supplémentaire pour Symfony
+                    sh 'sleep 45'
 
-                    // Vérifie l'état des conteneurs
-                    sh 'docker-compose ps'
+                    // Vérifications
+                    echo '=== Extensions PHP chargées ==='
+                    sh 'docker-compose exec app php -m'
 
-                    // Affiche les logs de l'app
+                    echo '=== Drivers PDO disponibles ==='
+                    sh 'docker-compose exec app php -r "print_r(PDO::getAvailableDrivers());"'
+
+                    echo '=== Variables d\'environnement PostgreSQL ==='
+                    sh 'docker-compose exec app env | grep POSTGRES'
+
+                    echo '=== Contenu du fichier .env ==='
+                    sh 'docker-compose exec app cat .env'
+
+                    echo '=== Logs de l\'application ==='
                     sh 'docker-compose logs app'
 
-                    // Teste la connectivité réseau depuis le conteneur database
-                    sh 'docker-compose exec database curl -f http://app:80 || echo "App non joignable depuis database"'
-
-                    // Teste depuis l'hôte (si le port est mappé)
-                    sh 'curl -v http://localhost:${APP_PORT} || echo "Port ${APP_PORT} non accessible"'
+                    echo '=== Test de connexion HTTP ==='
+                    sh 'curl -v http://localhost:${APP_PORT} || echo "Échec de la connexion au port ${APP_PORT}"'
                 }
             }
         }
