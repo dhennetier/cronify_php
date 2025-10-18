@@ -19,7 +19,13 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker-compose build --no-cache app'
+                    sh """
+                        docker build -t ${DOCKER_IMAGE}:${env.BUILD_NUMBER} \
+                            --build-arg POSTGRES_DB=${POSTGRES_DB} \
+                            --build-arg POSTGRES_USER=${POSTGRES_USER} \
+                            --build-arg POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
+                            -f docker/Dockerfile .
+                    """
                 }
             }
         }
@@ -30,26 +36,8 @@ pipeline {
                     sh 'docker-compose up -d database'
                     sh 'sleep 10'
                     sh 'docker-compose up -d app'
-                    sh 'sleep 45'
-
-                    // Vérifications (sans TTY)
-                    echo '=== Extensions PHP chargées ==='
-                    sh 'docker-compose exec -T app php -m'
-
-                    echo '=== Drivers PDO disponibles ==='
-                    sh 'docker-compose exec -T app php -r "print_r(PDO::getAvailableDrivers());"'
-
-                    echo '=== Variables d\'environnement PostgreSQL ==='
-                    sh 'docker-compose exec -T app env | grep POSTGRES'
-
-                    echo '=== Contenu du fichier .env ==='
-                    sh 'docker-compose exec -T app cat .env'
-
-                    echo '=== Logs de l\'application ==='
-                    sh 'docker-compose logs app'
-
-                    echo '=== Test de connexion HTTP ==='
-                    sh 'curl -v http://localhost:${APP_PORT} || echo "Échec de la connexion au port ${APP_PORT}"'
+                    sh 'sleep 45'  // Temps pour Symfony
+                    sh 'curl -f http://localhost:${APP_PORT} || echo "Échec du test HTTP sur le port ${APP_PORT}"'
                 }
             }
         }
