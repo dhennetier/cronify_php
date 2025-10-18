@@ -16,33 +16,39 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Debug: Vérifier les fichiers') {
             steps {
                 script {
-                    // Construit l'image en spécifiant le contexte (dossier "docker/")
-                    def customImage = docker.build(
-                        "${DOCKER_IMAGE}:${env.BUILD_NUMBER}",
-                        "docker/"  // Chemin vers le Dockerfile et le contexte
-                    ).withEnv([
-                        "POSTGRES_DB=${POSTGRES_DB}",
-                        "POSTGRES_USER=${POSTGRES_USER}",
-                        "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
-                    ])
+                    sh 'ls -la'
+                    sh 'ls -la docker/'
                 }
             }
         }
 
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Construit l'image avec le Dockerfile dans docker/ et le contexte docker/
+                    sh """
+                        docker build \
+                            -t ${DOCKER_IMAGE}:${env.BUILD_NUMBER} \
+                            --build-arg POSTGRES_DB=${POSTGRES_DB} \
+                            --build-arg POSTGRES_USER=${POSTGRES_USER} \
+                            --build-arg POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
+                            -f docker/Dockerfile docker/
+                    """
+                }
+            }
+        }
 
         stage('Test with Docker Compose') {
             steps {
                 script {
-                    // Lance les services avec docker-compose
+                    // Utilise docker-compose.yml à la racine
                     sh 'docker-compose up -d database'
-                    sh 'sleep 10'  // Attend que PostgreSQL soit prêt
+                    sh 'sleep 10'
                     sh 'docker-compose up -d app'
-
-                    // Vérifie que l'application répond
-                    sh 'sleep 15'  // Temps pour que l'app démarre
+                    sh 'sleep 15'
                     sh 'curl -f http://localhost:8080 || exit 1'
                 }
             }
@@ -51,7 +57,6 @@ pipeline {
 
     post {
         always {
-            // Arrête et nettoie les conteneurs
             sh 'docker-compose down -v || true'
         }
     }
