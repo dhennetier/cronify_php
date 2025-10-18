@@ -14,11 +14,7 @@ COPY . /var/www/
 
 COPY ./docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
-#dh1
-RUN apt-get update && apt-get install -y zip unzip 
-
 RUN cd /var/www && \
-    composer self-update 2.2.20 && \
     composer install && \
     npm install --force && \
     npm run build

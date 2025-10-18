@@ -14,7 +14,14 @@ services:
       # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
       # - ./docker/db/data:/var/lib/postgresql/data:rw
 ###< doctrine/doctrine-bundle ###
-
+  app:
+    image: cronify_php
+    ports:
+      - "8080:80"
+    environment:
+      DATABASE_URL: //postgres://${POSTGRES_USER:-symfony}:${POSTGRES_PASSWORD:-ChangeMe}@database:5432/${POSTGRES_DB:-app} 
+    depends_on: 
+      - database
 volumes:
 ###> doctrine/doctrine-bundle ###
   db-data:
