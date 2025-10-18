@@ -19,10 +19,19 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}").withEnv(["POSTGRES_DB=${POSTGRES_DB}", "POSTGRES_USER=${POSTGRES_USER}", "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"])
+                    // Construit l'image en spécifiant le contexte (dossier "docker/")
+                    def customImage = docker.build(
+                        "${DOCKER_IMAGE}:${env.BUILD_NUMBER}",
+                        "docker/"  // Chemin vers le Dockerfile et le contexte
+                    ).withEnv([
+                        "POSTGRES_DB=${POSTGRES_DB}",
+                        "POSTGRES_USER=${POSTGRES_USER}",
+                        "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
+                    ])
                 }
             }
         }
+
 
         stage('Test with Docker Compose') {
             steps {
