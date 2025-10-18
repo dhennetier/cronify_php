@@ -48,7 +48,7 @@ pipeline {
                     sh 'sleep 10'
                     sh 'docker-compose up -d app'
                     sh 'sleep 15'
-                    sh 'curl -f http://localhost:8080 || exit 1'
+                    sh 'curl -f http://localhost:9000 || exit 1'
                 }
             }
         }
