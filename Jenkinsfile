@@ -3,7 +3,10 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'cronify_php'
-        DOCKER_REGISTRY = ''  // Exemple : 'docker.io/dhennetier' ou 'ghcr.io/dhennetier' (optionnel)
+        POSTGRES_DB = 'app'
+        POSTGRES_USER = 'symfony'
+        POSTGRES_PASSWORD = 'ChangeMe'
+        POSTGRES_VERSION = '13-alpine'
     }
 
     stages {
@@ -16,32 +19,22 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def customImage = docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
+                    docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}").withEnv(["POSTGRES_DB=${POSTGRES_DB}", "POSTGRES_USER=${POSTGRES_USER}", "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"])
                 }
             }
         }
 
-        stage('Test') {
+        stage('Test with Docker Compose') {
             steps {
                 script {
-                    // Lance un conteneur pour tester
-                    docker.image("${DOCKER_IMAGE}:${env.BUILD_NUMBER}").run('--name test-container -d -p 8082:80')
-                    // Exemple de test : vérifie que le conteneur répond
-                    sh 'sleep 10 && curl -f http://localhost:8082 || true'
-                }
-            }
-        }
+                    // Lance les services avec docker-compose
+                    sh 'docker-compose up -d database'
+                    sh 'sleep 10'  // Attend que PostgreSQL soit prêt
+                    sh 'docker-compose up -d app'
 
-        stage('Push to Registry') {
-            when {
-                branch 'main'  // Seulement sur la branche main
-            }
-            steps {
-                script {
-                    // Envoi vers un registre Docker (optionnel)
-                    // docker.withRegistry('https://registry.hub.docker.com', 'docker-credentials') {
-                    //     docker.image("${DOCKER_IMAGE}:${env.BUILD_NUMBER}").push()
-                    // }
+                    // Vérifie que l'application répond
+                    sh 'sleep 15'  // Temps pour que l'app démarre
+                    sh 'curl -f http://localhost:8080 || exit 1'
                 }
             }
         }
@@ -49,9 +42,8 @@ pipeline {
 
     post {
         always {
-            // Nettoyage après le pipeline
-            sh 'docker stop test-container || true'
-            sh 'docker rm test-container || true'
+            // Arrête et nettoie les conteneurs
+            sh 'docker-compose down -v || true'
         }
     }
 }
