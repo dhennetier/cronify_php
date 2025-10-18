@@ -19,7 +19,7 @@ services:
     ports:
       - "9000:80"
     environment:
-      DATABASE_URL: //postgres://${POSTGRES_USER:-symfony}:${POSTGRES_PASSWORD:-ChangeMe}@database:5432/${POSTGRES_DB:-app} 
+      DATABASE_URL: //postgresql://${POSTGRES_USER:-symfony}:${POSTGRES_PASSWORD:-ChangeMe}@database:5432/${POSTGRES_DB:-app} 
     depends_on: 
       - database
 volumes:
