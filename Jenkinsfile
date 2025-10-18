@@ -19,9 +19,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh """
-                        docker-compose build --no-cache app
-                    """
+                    sh 'docker-compose build --no-cache app'
                 }
             }
         }
@@ -34,18 +32,18 @@ pipeline {
                     sh 'docker-compose up -d app'
                     sh 'sleep 45'
 
-                    // Vérifications
+                    // Vérifications (sans TTY)
                     echo '=== Extensions PHP chargées ==='
-                    sh 'docker-compose exec app php -m'
+                    sh 'docker-compose exec -T app php -m'
 
                     echo '=== Drivers PDO disponibles ==='
-                    sh 'docker-compose exec app php -r "print_r(PDO::getAvailableDrivers());"'
+                    sh 'docker-compose exec -T app php -r "print_r(PDO::getAvailableDrivers());"'
 
                     echo '=== Variables d\'environnement PostgreSQL ==='
-                    sh 'docker-compose exec app env | grep POSTGRES'
+                    sh 'docker-compose exec -T app env | grep POSTGRES'
 
                     echo '=== Contenu du fichier .env ==='
-                    sh 'docker-compose exec app cat .env'
+                    sh 'docker-compose exec -T app cat .env'
 
                     echo '=== Logs de l\'application ==='
                     sh 'docker-compose logs app'
