@@ -17,7 +17,7 @@ services:
   app:
     image: cronify_php
     ports:
-      - "8080:80"
+      - "9000:80"
     environment:
       DATABASE_URL: //postgres://${POSTGRES_USER:-symfony}:${POSTGRES_PASSWORD:-ChangeMe}@database:5432/${POSTGRES_DB:-app} 
     depends_on: 
