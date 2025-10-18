@@ -6,7 +6,7 @@ pipeline {
         POSTGRES_DB = 'app'
         POSTGRES_USER = 'symfony'
         POSTGRES_PASSWORD = 'ChangeMe'
-        POSTGRES_VERSION = '13-alpine'
+        POSTGRES_VERSION = '13'
     }
 
     stages {
